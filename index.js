@@ -10,7 +10,7 @@ app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
 
-const wss = new WebSocket.Server({ port: 8080 });
+const wss = new WebSocket.Server({ port: 8090 });
 const redisSubscriber = new Redis();
 const redisPublisher = new Redis();
 
