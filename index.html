@@ -1,80 +1,97 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>WebSocket Whiteboard</title>
-    <style>
-      #whiteboard {
-        border: 1px solid #000;
+
+<head>
+  <title>WebSocket Whiteboard</title>
+  <style>
+    #whiteboard {
+      border: 1px solid #000;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="whiteboard" width="800" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById("whiteboard");
+    const ctx = canvas.getContext("2d");
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    const socket = new WebSocket("ws://localhost:8090");
+
+    socket.onopen = () => {
+      console.log("WebSocket connection established.");
+    };
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "draw") {
+        drawLine(data.x0, data.y0, data.x1, data.y1);
       }
-    </style>
-  </head>
-  <body>
-    <canvas id="whiteboard" width="800" height="600"></canvas>
-    <script>
-      const canvas = document.getElementById("whiteboard");
-      const ctx = canvas.getContext("2d");
-      let isDrawing = false;
-      let lastX = 0;
-      let lastY = 0;
+    };
 
-      const socket = new WebSocket("ws://65.2.33.195:8090");
+    socket.onclose = () => {
+      console.log("WebSocket connection closed.");
+    };
 
-      socket.onopen = () => {
-        console.log("WebSocket connection established.");
-      };
+    function drawLine(x0, y0, x1, y1) {
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+      ctx.closePath();
+    }
 
-      socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
+    canvas.addEventListener("mousedown", (e) => {
+      isDrawing = true;
+      lastX = e.offsetX;
+      lastY = e.offsetY;
+    });
 
-        if (data.type === "draw") {
-          drawLine(data.x0, data.y0, data.x1, data.y1);
-        }
-      };
-
-      socket.onclose = () => {
-        console.log("WebSocket connection closed.");
-      };
-
-      function drawLine(x0, y0, x1, y1) {
-        ctx.beginPath();
-        ctx.moveTo(x0, y0);
-        ctx.lineTo(x1, y1);
-        ctx.stroke();
-        ctx.closePath();
+    canvas.addEventListener("mousemove", (e) => {
+      if (isDrawing) {
+        const newX = e.offsetX;
+        const newY = e.offsetY;
+        drawLine(lastX, lastY, newX, newY);
+        socket.send(
+          JSON.stringify({
+            type: "draw",
+            x0: lastX,
+            y0: lastY,
+            x1: newX,
+            y1: newY,
+          })
+        );
+        lastX = newX;
+        lastY = newY;
       }
+    });
 
-      canvas.addEventListener("mousedown", (e) => {
-        isDrawing = true;
-        lastX = e.offsetX;
-        lastY = e.offsetY;
-      });
+    canvas.addEventListener("mouseup", () => {
+      isDrawing = false;
+    });
 
-      canvas.addEventListener("mousemove", (e) => {
-        if (isDrawing) {
-          const newX = e.offsetX;
-          const newY = e.offsetY;
-          drawLine(lastX, lastY, newX, newY);
-          socket.send(
-            JSON.stringify({
-              type: "draw",
-              x0: lastX,
-              y0: lastY,
-              x1: newX,
-              y1: newY,
-            })
-          );
-          lastX = newX;
-          lastY = newY;
-        }
-      });
+    canvas.addEventListener("mouseleave", () => {
+      isDrawing = false;
+    });
 
-      canvas.addEventListener("mouseup", () => {
-        isDrawing = false;
-      });
 
-      canvas.addEventListener("mouseleave", () => {
-        isDrawing = false;
-      });
-    </script>
-  </body>
+
+    // Function to resize the canvas
+    function resizeCanvas() {
+      canvas.width = window.innerWidth-50;
+      canvas.height = window.innerHeight-50;
+    }
+
+    // Call the function initially
+    resizeCanvas();
+
+    // Call the function every time the window is resized
+    window.addEventListener('resize', resizeCanvas);
+  </script>
+</body>
+
 </html>
