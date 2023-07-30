@@ -2,7 +2,7 @@ const WebSocket = require("ws");
 const Redis = require("ioredis");
 const express = require("express");
 const app = express();
-const port = 3000;
+const port = 3001;
 
 app.use(express.static("public"));
 
